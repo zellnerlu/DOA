@@ -10,19 +10,22 @@ import os
 from utils import *
 
 #params
-#
+###
 MAIN_LOG_SIZE = 1000  # number of traces in main log
 SUB_LOG_SIZE = 1000  # number of traces in deviating log
 SWITCH = .05  # defines inter-drift distance for synthetic log creation
 # LOWER_BOUND defines the size at which the algorithm searches for LOF scores below threshold for the first time
 # has to be lower or equal than SLIDING WINDOW SIZE
-LOWER_BOUND = 35
-SLIDING_WINDOW_SIZE = NUM_NEIGH = 60
-OFFSET = 0.005  # how much is a LOF allowed to deviate from 1 to be counted as an outlier
+LOWER_BOUND = 45
+SLIDING_WINDOW_SIZE = NUM_NEIGH = 50
+OFFSET = 0.025  # how much is a LOF allowed to deviate from 1 to be counted as an outlier
 DISCOVER = True
 CREATE_PLOTS = True
-#
+PATH = os.path.join("datasets", "synthetic")
+###
 
+#logging
+###
 logging.basicConfig(filename='outlier_aggregration.log', filemode='w', format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.DEBUG)
 root = logging.getLogger()
 # Adding another logging handler for stdout
@@ -31,8 +34,7 @@ handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 handler.setFormatter(formatter)
 root.addHandler(handler)
-
-PATH = os.path.join("datasets", "synthetic")
+###
 
 def import_logs(path):
     l = []
@@ -62,7 +64,8 @@ if DISCOVER:
     main_model, main_im, main_fm = create_model(log_main)
     #save_heuristics_net(log_main)
 else:
-    main_model, main_im, main_fm = convert_bpmn(os.path.join("datasets", "bpmn_mopels", "1.bpmn"))
+    # reference model can also be imported instead of using process discovery
+    main_model, main_im, main_fm = convert_bpmn(os.path.join("datasets", "bpmn_models", "1.bpmn"))
 # visualize
 gviz = pn_vis_factory.apply(main_model, main_im, main_fm, parameters={"format": "png"})
 logging.debug("Saving micro-cluster model")
@@ -197,8 +200,8 @@ for i, trace in enumerate(log):
                     durations.append(comp_duration)
                     sliding_window_full = False
                 # Cluster traces if score is below threshold
-                # Wait for at least NUM_NEIGH traces to form a micro-cluster where NUM_NEIGH = LOWER_BOUND
-                if len(cluster) >= LOWER_BOUND:
+                # Wait for at least NUM_NEIGH traces to form a micro-cluster
+                if len(cluster) >= NUM_NEIGH:
                     logging.debug("Clustering at step/trace {} (including conforming and non-conforming steps)".format(i))
 
                     micro_process_log = []
@@ -234,8 +237,8 @@ for i, trace in enumerate(log):
                     gather_tids.append(tids)
 
                     if CREATE_PLOTS:
-                        #plot_gantt(global_colors, i, SUB_LOG_SIZE*SWITCH)
-                        plot_gantt(global_colors, i)
+                        plot_gantt(global_colors, i, SUB_LOG_SIZE*SWITCH)
+                        #plot_gantt(global_colors, i)
 
                     logging.debug("Conforming: {}; MC-conforming: {}".format(conforming, mc_conforming))
                     if pointer < len(palette)-1:
@@ -246,8 +249,8 @@ for i, trace in enumerate(log):
                     plot_range = np.arange(len(abs_scores))
                     plot_multicolored_lines(plot_range, abs_scores, current_colors, i, "unsorted", tids)
                     plot_LOF(abs_scores, i, "unsorted", tids)
-                    #plot_gantt(global_colors, i, SUB_LOG_SIZE*SWITCH)
-                    plot_gantt(global_colors, i)
+                    plot_gantt(global_colors, i, SUB_LOG_SIZE*SWITCH)
+                    #plot_gantt(global_colors, i)
                     logging.debug("Conforming: {}; MC-conforming: {}".format(conforming, mc_conforming))
                 if len(gather_abs_scores) == 5 and CREATE_PLOTS:
                     plot_colored_subplots(gather_tids, gather_abs_scores, gather_current_colors, i)
@@ -272,8 +275,8 @@ for i, trace in enumerate(log):
     if i == LOCAL_LIM-1:
         plot_range = np.arange(len(abs_scores))
         plot_multicolored_lines(plot_range, last_abscores, current_colors, i, "unsorted", tids)
-        #plot_gantt(global_colors, i, SUB_LOG_SIZE*SWITCH)
-        plot_gantt(global_colors, i)
+        plot_gantt(global_colors, i, SUB_LOG_SIZE*SWITCH)
+        #plot_gantt(global_colors, i)
 
 # Some concluding information
 logging.debug("Took {}s".format(time.time()-global_start_time))
