@@ -39,13 +39,12 @@ root.addHandler(handler)
 def import_logs(path):
     l = []
     for i, file in enumerate(os.listdir(path)):
-        if i < 4:
-            logging.debug("Importing: {}".format(file))
-            sublog = xes_import_factory.apply(os.path.join(path, file))
-            logging.debug("Sublog length: {}".format(len(sublog)))
+        logging.debug("Importing: {}".format(file))
+        sublog = xes_import_factory.apply(os.path.join(path, file))
+        logging.debug("Sublog length: {}".format(len(sublog)))
 
-            for item in sublog:
-                l.append(item)
+        for item in sublog:
+            l.append(item)
     return l
 
 
